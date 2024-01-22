@@ -21,26 +21,18 @@ def longest_prefix(files){
 
 // NF parameter for PCA step
 params.NB_PCS = 6
-
-// parameter for root directory (where all genotype data is stored)
-params.ROOT = "$launchDir/test/data/phased_bed"
-
-// olvier merge
+// Access the genotype process from TarGene
 include { mergeBEDS } from "$launchDir/modules/genotypes.nf"
-//  PCA processes
+//  PCA processes from TarGene
 include { FlashPCA; AdaptFlashPCA } from "$launchDir/modules/confounders.nf"
-
 // Create channel that stores genotype info
 input_channel_pairs = Channel.fromFilePairs("$launchDir/test/data/phased_bed/ukb_chr*.{bed,bim,fam}", size: 3)
-// Creats channel that collects all files in root directory and stores them in a list
-root_channel = Channel.fromPath("$params.ROOT")
 
 process LocoMergeBEDS {
     label 'bigmem'
     container "olivierlabayle/tl-core:0.6"
     input:
-        path files
-        val chr
+        tuple val(chr), path(files)
     output:
         path "${chr}_excluded*"
 
@@ -56,45 +48,28 @@ process LocoMergeBEDS {
         """
 }
 
-// Write new subworkflow that will take that chr channel and will run the this workflow once per
-// chromosome
-// workflow Loco {
-//     take:
-//         chr_channel
-//         exc_chr
-//         files
+workflow GenerateIIDGenotypesLOCO{
+    take:
+        bed_files
+    main:
 
-//     chr_channel
-//         .filter{it != exc_chr}
-//         .join(input_channel_pairs)
-//         .map{prefix, files -> files}
-//         .collect()
-//         .set{merged_ch}
-//     exc_chr_ch = Channel.of(exc_chr) // channel to manipulate to add multiple emissions
-//     LocoMergeBEDS(merged_ch, exc_chr_ch)
-// }
+        merged_bed_ch = LocoMergeBEDS(bed_files)
+        pcs_txt = FlashPCA(merged_bed_ch)
+        pcs_csv = AdaptFlashPCA(pcs_txt)
 
-workflow {
-    
-    // obtain the chromosome numbers and associated files
-    chr_channel = input_channel_pairs.map { it[0] }
-    // chr_channel.view()
-
-    exc_chr = 'ukb_chr1'
-    chr_channel
-        .filter{it != exc_chr}
-        .join(input_channel_pairs)
-        .map{prefix, files -> files}
-        .collect()
-        .set{merged_ch}
-    exc_chr_ch = Channel.of(exc_chr) // channel to manipulate to add multiple emissions
-    merged_bed_ch = LocoMergeBEDS(merged_ch, exc_chr_ch)
-    pcs_txt = FlashPCA(merged_bed_ch)
-    pcs_csv = AdaptFlashPCA(pcs_txt)
-    pcs_csv.view()
-
-
+    emit:
+        pcs_csv
+        
 }
 
-// clean up unused code and commit to branch
-// this version works for one chr
+workflow {
+    all_files = input_channel_pairs.map { it[1] }.collect().toList()
+    // DO NOT DELETE
+    input_channel_pairs
+        .combine(all_files)
+        .map{ [it[0], it[2].findAll{f->!f.normalize().toString().contains(it[0])}] }
+        .set{exclusion_set}
+    
+    GenerateIIDGenotypesLOCO(exclusion_set)
+
+}

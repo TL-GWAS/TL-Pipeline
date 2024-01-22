@@ -15,3 +15,4 @@ docs/Manifest.toml
 trace.txt*
 test/Manifest.toml
 trace.txt
+test/chr_exc.sh
