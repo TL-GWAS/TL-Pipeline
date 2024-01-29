@@ -1,5 +1,5 @@
 #!/usr/bin/env nextflow
-nextflow.enable.dsl = 2
+// nextflow.enable.dsl = 2
 
 def longest_prefix(files){
     // Only one file, strangely it is not passed as a list
@@ -19,14 +19,16 @@ def longest_prefix(files){
     }
 }
 
-// NF parameter for PCA step
-params.NB_PCS = 6
-// Access the genotype process from TarGene
-include { mergeBEDS } from "$launchDir/modules/genotypes.nf"
-//  PCA processes from TarGene
-include { FlashPCA; AdaptFlashPCA } from "$launchDir/modules/confounders.nf"
-// Create channel that stores genotype info
-input_channel_pairs = Channel.fromFilePairs("$launchDir/test/data/phased_bed/ukb_chr*.{bed,bim,fam}", size: 3)
+// // NF parameter for PCA step
+// params.NB_PCS = 6
+// params.OUTDIR = "$launchDir/test/output"
+
+// // Access the genotype process from TarGene
+// include { mergeBEDS } from "$launchDir/modules/genotypes.nf"
+// //  PCA processes from TarGene
+// include { FlashPCA; AdaptFlashPCA } from "$launchDir/modules/confounders.nf"
+// // Create channel that stores genotype info
+// input_channel_pairs = Channel.fromFilePairs("$launchDir/test/data/phased_bed/ukb_chr*.{bed,bim,fam}", size: 3)
 
 process LocoMergeBEDS {
     label 'bigmem'
@@ -34,7 +36,7 @@ process LocoMergeBEDS {
     input:
         tuple val(chr), path(files)
     output:
-        path "${chr}_excluded*"
+        tuple path("${chr}_excluded*"), val(chr)
 
     script:
         
@@ -48,7 +50,7 @@ process LocoMergeBEDS {
         """
 }
 
-workflow GenerateIIDGenotypesLOCO{
+workflow RunPCALoco {
     take:
         bed_files
     main:
@@ -62,14 +64,14 @@ workflow GenerateIIDGenotypesLOCO{
         
 }
 
-workflow {
-    all_files = input_channel_pairs.map { it[1] }.collect().toList()
-    // DO NOT DELETE
-    input_channel_pairs
-        .combine(all_files)
-        .map{ [it[0], it[2].findAll{f->!f.normalize().toString().contains(it[0])}] }
-        .set{exclusion_set}
+// workflow {
+//     all_files = input_channel_pairs.map { it[1] }.collect().toList()
+//     // DO NOT DELETE
+//     input_channel_pairs
+//         .combine(all_files)
+//         .map{ [it[0], it[2].findAll{f->!f.normalize().toString().contains(it[0])}] }
+//         .set{exclusion_set}
     
-    GenerateIIDGenotypesLOCO(exclusion_set)
+//     GenerateIIDGenotypesLOCO(exclusion_set)
 
-}
+// }

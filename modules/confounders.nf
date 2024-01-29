@@ -3,10 +3,9 @@ process FlashPCA {
     container "ktetleycampbell/flashpca:1.0"
 
     input:
-        path bedfiles
-    
+        tuple path(bedfiles), val(chr)    
     output:
-        path "pcs.txt"
+        tuple path("pcs.txt"), val(chr)
     
     script:
         prefix = bedfiles[0].toString().minus('.bed')
@@ -15,11 +14,11 @@ process FlashPCA {
 
 process AdaptFlashPCA {
     container "olivierlabayle/tl-core:0.6"
-    publishDir "$params.OUTDIR/covariates/", mode: 'symlink'
+    publishDir "$params.OUTDIR/covariates/exc_${chr}", mode: 'symlink'
     label 'bigmem'
     
     input:
-        path flashpca_out
+        tuple path(flashpca_out), val(chr)
     
     output:
         path "pcs.csv"

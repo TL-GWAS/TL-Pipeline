@@ -6,4 +6,7 @@ find . -type f -name '.nextflow.log*' -delete
 # Remove the content of the local work directory (modify the path if needed)
 rm -rf work
 
+# Remove all null directories
+rm -rf null
+
 echo "Cleanup complete."
