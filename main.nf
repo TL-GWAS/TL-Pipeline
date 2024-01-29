@@ -168,6 +168,7 @@ workflow generateTMLEEstimates {
         }
         else if (params.PARAMETER_PLAN == "FROM_GWAS") {
             throw new Exception("Under development")
+            //
         }
         else { 
             throw new Exception("This PARAMETER_PLAN is not available.")
@@ -229,18 +230,28 @@ workflow {
     // Extract traits for UKBB
     extractTraits()
     
-    // Generate IID Genotypes
-    generateIIDGenotypes(extractTraits.out)
+    // Generate genotypes and confounders for fromParams and fromActors
+    if (params.PARAMETER_PLAN == "FROM_PARAM_FILE" || params.PARAMETER_PLAN == "FROM_ACTORS"){
+        // Generate IID Genotypes
+        generateIIDGenotypes(extractTraits.out)
 
-    // Genetic confounders
-    geneticConfounders(generateIIDGenotypes.out)
+        // Genetic confounders
+        geneticConfounders(generateIIDGenotypes.out)
 
-    // generate estimates
-    generateTMLEEstimates(
-        extractTraits.out,
-        geneticConfounders.out,
-    )
+        // generate estimates
+        generateTMLEEstimates(
+            extractTraits.out,
+            geneticConfounders.out,
+        )
+    } else if (params.PARAMETER_PLAN == "FROM_GWAS"){
+        generateLocoConfounders()
 
+        generateTMLEEstimates(
+            extractTraits.out
+            generateLocoConfounders.out
+        )
+    }
+    
     // generate sieve estimates
     if (params.NB_VAR_ESTIMATORS != 0){
         sieve_results = generateSieveEstimates(generateTMLEEstimates.out.inf_curves, generateIIDGenotypes.out)
