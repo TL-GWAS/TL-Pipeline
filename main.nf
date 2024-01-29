@@ -50,6 +50,7 @@ include { TMLE; TMLEInputsFromParamFile; TMLEInputsFromActors } from './modules/
 include { GRMPart; AggregateGRM } from './modules/grm.nf'
 include { SieveVarianceEstimation ; MergeOutputs } from './modules/sieve_variance.nf'
 include { GeneratePermutationTestsData; GenerateRandomVariantsTestsData } from './modules/negative_control.nf'
+include { LocoMergeBEDS: RunPCALoco } from './modules/loco.nf'
 
 workflow extractTraits {
     traits_config = Channel.value(file("$params.TRAITS_CONFIG"))
@@ -73,6 +74,22 @@ workflow extractTraits {
 
     emit:
         extracted_traits
+}
+
+workflow generateLocoConfounders {
+    main:
+        bed_files_ch = Channel.fromFilePairs("$params.BED_FILES", size: 3, checkIfExists: true)
+        input_channel_pairs = bed_files_ch.map { it[1] }.collect().toList()
+
+        input_channel_pairs
+            .combine(bed_files_ch)
+            .map{ [it[0], it[2].findAll{f->!f.normalize().toString().contains(it[0])}] }
+            .set{exclusion_set}
+
+        RunPCALoco(exclusion_set)
+
+    emit:
+        RunPCALoco.out
 }
 
 workflow generateIIDGenotypes {
@@ -148,6 +165,9 @@ workflow generateTMLEEstimates {
                 traits,
                 genetic_confounders,
                 parameter_file)
+        }
+        else if (params.PARAMETER_PLAN == "FROM_GWAS") {
+            throw new Exception("Under development")
         }
         else { 
             throw new Exception("This PARAMETER_PLAN is not available.")
