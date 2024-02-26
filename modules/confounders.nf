@@ -1,3 +1,4 @@
+// Changed for LOCO
 process FlashPCA {
     label "multithreaded"
     container "ktetleycampbell/flashpca:1.0"
@@ -12,6 +13,7 @@ process FlashPCA {
         "/home/flashpca-user/flashpca/flashpca --bfile $prefix --ndim $params.NB_PCS --numthreads $task.cpus"
 }
 
+// Changed for LOCO
 process AdaptFlashPCA {
     container "olivierlabayle/tl-core:0.6"
     publishDir "$params.OUTDIR/covariates/exc_${chr}", mode: 'symlink'

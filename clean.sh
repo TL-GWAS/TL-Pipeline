@@ -9,4 +9,7 @@ rm -rf work
 # Remove all null directories
 rm -rf null
 
+# Remove all traces
+find . -type f -name 'trace.txt*' -delete
+
 echo "Cleanup complete."

@@ -66,19 +66,20 @@ process mergeBEDS{
 
 }
 
+// Changed for LOCO
 process SampleQCFilter {
     label 'bigmem'
     container "olivierlabayle/plink2:0.1.0"
     publishDir "$params.OUTDIR/iid_genotypes", mode: 'symlink'
 
     input:
-        path merged_bed_files
+        tuple path(merged_bed_files), val(chr)
     
     output:
-        path "qc_filtered*"
+        tuple path("qc*"), val(chr)
 
     script:
-        "plink2 --bfile ukbb_merged --make-bed --hwe 1e-10 --geno --mind --out qc_filtered"
+        "plink2 --bfile ${chr}_excluded --make-bed --hwe 1e-10 --geno --mind --out qc_exc_${chr}"
 }
 
 
