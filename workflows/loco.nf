@@ -1,48 +1,30 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
 include { ExtractTraits } from "../subworkflows/extract_traits.nf"
-include { FlashPCA; AdaptFlashPCA; SampleQCFilter; filterBED; LocoMergeBEDS} from "../modules/confounders.nf"
+include {LOCOGenotypes; LOCOConfounders } from "../subworkflows/confounders.nf"
 
-// Create channel that stores genotype info
-input_channel_pairs = Channel.fromFilePairs(params.BED_FILES, size: 3, checkIfExists: true)
+workflow LOCOGWAS{
+    traits_dataset = Channel.value(file("$params.TRAITS_DATASET", checkIfExists: true))
+    traits_config = Channel.value(file("$params.TRAITS_CONFIG", checkIfExists: true))
+    ukb_withdrawal_list = Channel.value(file("$params.UKB_WITHDRAWAL_LIST", checkIfExists: true))
+    ukb_encoding_file = params.UKB_ENCODING_FILE
 
-workflow LOCO_Input_Channels {
-    take:
-        input_channel_pairs
-        traits
-    main:
-        filter_prep = input_channel_pairs.map {it[1]}
-        filtered = filterBED(filter_prep, params.QC_FILE, params.LD_BLOCKS, traits)
-        filtered = filtered.collect().toList()
+    loco_bed_files = Channel.fromFilePairs("$params.BED_FILES", size: 3, checkIfExists: true)
+    qc_file = Channel.value(file("$params.QC_FILE", checkIfExists: true))
+    ld_blocks = Channel.value(file("$params.LD_BLOCKS", checkIfExists: false))
 
-        input_channel_pairs
-            .combine(filtered)
-            .map {[it[0], it[2].findAll { filePath -> 
-                def filePathString = filePath.normalize().toString() 
-                ! filePathString.contains(it[0].normalize().toString()+".") }] }
-            .set {qc_exclusion_set}
-    
-    emit:
-        qc_exclusion_set
-}
+    ExtractTraits(
+        traits_dataset, 
+        traits_config, 
+        ukb_withdrawal_list, 
+        ukb_encoding_file)
 
-workflow RunPCALoco {
-    take:
-        bed_files
-    main:
-        merged_bed_ch = LocoMergeBEDS(bed_files)
-        qc_filtered = SampleQCFilter(merged_bed_ch)
-        pcs_txt = FlashPCA(qc_filtered)
-        pcs_csv = AdaptFlashPCA(pcs_txt)
+    LOCOGenotypes(
+        loco_bed_files, 
+        ExtractTraits.out,
+        qc_file,
+        ld_blocks)
 
-    emit:
-        pcs_csv
-        
-}
-
-workflow {
-    ExtractTraits(params.TRAITS_DATASET, params.TRAITS_CONFIG, params.UKB_WITHDRAWAL_LIST, params.UKB_ENCODING_FILE)
-    LOCO_Input_Channels(input_channel_pairs, ExtractTraits.out)
-    RunPCALoco(LOCO_Input_Channels.out)
+    LOCOConfounders(LOCOGenotypes.out)
     
 }
