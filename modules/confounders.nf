@@ -1,10 +1,36 @@
+def longest_prefix(files){
+    // Only one file, strangely it is not passed as a list
+    if (files instanceof Collection == false) {
+        return files.getName()
+    }
+    // More than one file
+    def index = 0
+    while(true){
+        def current_prefix = files[0].getName()[0..index]
+        for (file in files){
+            if(file.getName()[0..index] != current_prefix){
+                return current_prefix[0..-2]
+            }
+        }
+        index++
+    }
+}
+
+def get_length(files) {
+    def len = 0
+    for (file in files){
+        len++
+    }
+    return len
+}
+
 process filterBED{
     label 'bigmem'
     container "olivierlabayle/tl-core:0.7"
     publishDir "$params.OUTDIR/qc_filtered_chromosomes", mode: 'symlink'
 
     input:
-        tuple val(chr_id), file(bedfiles)
+        path bedfiles
         path qcfile
         path ld_blocks
         path traits
@@ -67,22 +93,43 @@ process mergeBEDS{
 
 }
 
+process LocoMergeBEDS {
+    label 'bigmem'
+    container "olivierlabayle/tl-core:0.6"
+
+    input:
+        tuple val(chr), path(files)
+    output:
+        tuple path("${chr}_excluded*"), val(chr)
+
+    script:
+        prefix = longest_prefix(files)
+        len = get_length(files)
+
+        """
+        #!/bin/bash
+    
+        TEMPD=\$(mktemp -d)
+        JULIA_DEPOT_PATH=\$TEMPD:/opt julia --project=/TargeneCore.jl --startup-file=no /TargeneCore.jl/bin/prepare_confounders.jl --input ${prefix} --output ${chr}_excluded merge
+        
+        """
+}
+
 process SampleQCFilter {
     label 'bigmem'
     container "olivierlabayle/plink2:0.1.0"
     publishDir "$params.OUTDIR/iid_genotypes", mode: 'symlink'
 
     input:
-        path merged_bed_files
+        tuple path(merged_bed_files), val(chr)
     
     output:
-        path "qc_filtered*"
+        tuple path("qc*"), val(chr)
 
     script:
-        "plink2 --bfile ukbb_merged --make-bed --hwe 1e-10 --geno --mind --out qc_filtered"
+        "plink2 --bfile ${chr}_excluded --make-bed --hwe 1e-10 --geno --mind --out qc_exc_${chr}"
 }
 
->>>>>>> main
 process FlashPCA {
     label "multithreaded"
     container "ktetleycampbell/flashpca:1.0"
@@ -97,7 +144,6 @@ process FlashPCA {
         "/home/flashpca-user/flashpca/flashpca --bfile $prefix --ndim ${params.NB_PCS} --numthreads $task.cpus"
 }
 
-// Changed for LOCO
 process AdaptFlashPCA {
     container "olivierlabayle/tl-core:0.6"
     publishDir "$params.OUTDIR/covariates/exc_${chr}", mode: 'symlink'

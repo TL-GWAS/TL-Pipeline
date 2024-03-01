@@ -15,4 +15,5 @@ docs/Manifest.toml
 trace.txt*
 trace.txt
 test/chr_exc.sh
-test/output/
+test/output/*
+dag*
