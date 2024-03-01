@@ -15,3 +15,12 @@ def longest_prefix(files){
         index++
     }
 }
+
+// helper function
+def get_length(files) {
+    def len = 0
+    for (file in files){
+        len++
+    }
+    return len
+}

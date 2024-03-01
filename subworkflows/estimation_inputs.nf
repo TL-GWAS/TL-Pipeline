@@ -43,6 +43,15 @@ workflow EstimationInputs {
                 "allele-independent"
                 )
         }
+        else if (params.STUDY_DESIGN == "LOCO_GWAS"){
+            tmle_inputs = TMLEInputsFromParamFile(
+                bed_files,
+                traits,
+                genetic_confounders,
+                estimands_file,
+                "loco-gwas"
+            )
+        }
         else { 
             throw new Exception("This STUDY_DESIGN is not available.")
         }
