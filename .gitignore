@@ -13,7 +13,7 @@ test/sandbox.jl
 docs/Manifest.toml
 *.DS_Store
 trace.txt*
-test/Manifest.toml
 trace.txt
 test/chr_exc.sh
-test/output/
+test/output/*
+dag*

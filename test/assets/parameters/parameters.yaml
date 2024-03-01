@@ -1,0 +1,53 @@
+type: "Configuration"
+estimands:
+  - outcome_extra_covariates: []
+    type: "ATE"
+    treatment_values:
+      3:3502414:T:C:
+        case: "TT"
+        control: "CT"
+      1:238411180:T:C:
+        case: "TC"
+        control: "TT"
+    outcome: ALL
+    treatment_confounders:
+      3:3502414:T:C: []
+      1:238411180:T:C: []
+  - outcome_extra_covariates: []
+    type: "IATE"
+    treatment_values:
+      3:3502414:T:C:
+        case: "TT"
+        control: "CT"
+      1:238411180:T:C:
+        case: "TC"
+        control: "TT"
+    outcome: ALL
+    treatment_confounders:
+      3:3502414:T:C: []
+      1:238411180:T:C: []
+  - outcome_extra_covariates: []
+    type: "CM"
+    treatment_values:
+      3:3502414:T:C: "CT"
+      1:238411180:T:C: "TC"
+    outcome: ALL
+    treatment_confounders:
+      3:3502414:T:C: []
+      1:238411180:T:C: []
+  - outcome_extra_covariates: []
+    type: "ATE"
+    treatment_values:
+      2:14983:G:A:
+        case: "GG"
+        control: "AG"
+    outcome: ALL
+    treatment_confounders:
+      2:14983:G:A: []
+  - outcome_extra_covariates: []
+    type: "CM"
+    treatment_values:
+      2:14983:G:A: "AG"
+    outcome: ALL
+    treatment_confounders:
+      2:14983:G:A: []

@@ -1,0 +1,10 @@
+orders: [2]
+estimands:
+  - IATE
+variants:
+  TF1:
+    bQTLs:
+      - "1:238411180:T:C"
+      - "3:3502414:T:C"
+    eQTLs:
+      - "2:14983:G:A"

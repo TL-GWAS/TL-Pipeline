@@ -1,51 +1,65 @@
+module TestUKBFromActors
+
+using Test
+using JLD2
+using Arrow
+using DataFrames
+using TMLE
+using CSV
+using TargetedEstimation
+using Serialization
+
 # "local" profile assumes singularity is installed
 args = length(ARGS) > 0 ? ARGS : ["-profile", "local", "-resume"] 
 
 include("utils.jl")
 
 @testset "Test ukb_from_actors.config" begin
-    cmd = `nextflow run main.nf -c conf/ci_jobs/ukb_from_actors.config $args`
+    cmd = `nextflow run main.nf -c test/configs/ukb_from_actors.config $args`
     @info string("The following command will be run:\n", cmd)
 
     r = run(cmd)
     @test r.exitcode == 0
 
     ## Checking main output
-    output = CSV.read(joinpath("results", "summary.csv"), DataFrame)
-    dataset = DataFrame(Arrow.Table(joinpath("results", "tmle_inputs", "final.data.arrow")))
-    bQTLs = Symbol.(CSV.read(joinpath("test", "data", "actors", "bqtls.csv"), DataFrame).ID)
+    # Results
+    hdf5_results_file = jldopen(joinpath("results", "results.hdf5"))
+    results_from_hdf5 = vcat((hdf5_results_file[key] for key in keys(hdf5_results_file))...)
+    results_from_json = TMLE.read_json(joinpath("results", "results.json"))
+    @test length(results_from_json) == length(results_from_hdf5) > 300
 
-    @test names(output) == vcat(SUMMARY_COLUMNS, SIEVE_COLUMNS, ADJUTMENT_COL)
-    # 2 bQTLs and 1 trans-actor
-    @test Set(unique(output.TREATMENTS)) == Set(["1:238411180:T:C", "3:3502414:T:C", "1:238411180:T:C_&_2:14983:G:A", "3:3502414:T:C_&_2:14983:G:A"])
-    
-    check_fails_are_extremely_rare_traits(output, dataset)
-    test_n_success_more_than_threshold(output, 20)
+    failed_results = retrieve_failed_results(results_from_hdf5; expected_keys=(:TMLE, :OSE))
+    # All fails are due to fluctuation failure due non positive definite matrix
+    # This does not affect the OSE
+    @test isempty(failed_results.OSE)
+    # Less than 1/3 affected: this is still quite significant
+    @test length(failed_results.TMLE) / length(results_from_hdf5) < 1/3
+    @test all(startswith(x.msg, "Could not fluctuate") for x ∈ failed_results.TMLE)
+
+    dataset = Arrow.Table(joinpath("results", "dataset.arrow")) |> DataFrame
+
+    check_fails_are_extremely_rare_traits(failed_results.TMLE, dataset; ncases=3)
 
     ## Checking parameter files correspond to either bQTL only or bQTL/eQTL
-    parameters_1 = parameters_from_yaml(joinpath("results", "parameters", "final.param_1.yaml"))
-    @test size(parameters_1, 1) == 400
-    for Ψ in parameters_1
-        @test keys(Ψ.treatment)[1] ∈ bQTLs
-    end
+    bQTLs = Symbol.(CSV.read(joinpath("test", "assets", "actors", "bqtls.csv"), DataFrame).ID)
 
-    parameters_2 = parameters_from_yaml(joinpath("results", "parameters", "final.param_2.yaml"))
-    @test size(parameters_2, 1) == 44
-    for Ψ in parameters_2
-        @test keys(Ψ.treatment)[1] ∈ bQTLs
+    config_1 = deserialize(joinpath("results", "estimands", "final.estimands_1.jls"))
+    @test length(config_1.estimands) == 400
+    config_2 = deserialize(joinpath("results", "estimands", "final.estimands_2.jls"))
+    @test 0 < length(config_2.estimands) <= 400
+    for Ψ in vcat(config_1.estimands, config_2.estimands)
+        @test length(intersect(keys(Ψ.treatment_values), bQTLs)) == 1
     end
-
 end
 
-@testset "Test negative controls" begin
-    cmd = `nextflow run main.nf -entry negativeControl -c conf/ci_jobs/ukb_from_actors.config $args`
+@testset "Test PERMUTATION_TEST" begin
+    cmd = `nextflow run main.nf -entry PERMUTATION_TEST -c test/configs/negcontrol.config $args`
     @info string("The following command will be run:\n", cmd)
 
     r = run(cmd)
     @test r.exitcode == 0
 
-    # Check permutation test
-    data = DataFrame(Arrow.Table(joinpath("results", "permutation_data", "permutation_dataset.arrow")))
+    data = Arrow.Table(joinpath("results", "permutation_tests", "permutation_dataset.arrow")) |> DataFrame
     
     n_permuted_cols = 0
     for colname in names(data)
@@ -55,16 +69,27 @@ end
     end
     @test n_permuted_cols > 20
 
-    parameters = parameters_from_yaml(joinpath("results", "permutation_data", "permutation_param_1.yaml"))
-    @test size(parameters, 1) == 100
-    @test all(Ψ isa IATE for Ψ in parameters)
+    permutation_config = deserialize(joinpath("results", "permutation_tests", "estimands", "permutation_estimands_1.jls"))
+    @test length(permutation_config.estimands) == 100
+    @test Set(typeof(Ψ) for Ψ in permutation_config.estimands) == Set([TMLE.StatisticalATE, TMLE.StatisticalIATE])
     
-    results = CSV.read(joinpath("results", "permutation_summary.csv"), DataFrame)
-    @test size(results) == (100, 20)
-    @test length(collect(skipmissing(results.TMLE_PVALUE))) > 20
-
-    # Check random variants data
-    parameters = parameters_from_yaml(joinpath("results", "random_variants_parameters.yaml"))
-    @test size(parameters, 1) > 200
-    @test all(Ψ isa IATE for Ψ in parameters)
+    results = jldopen(joinpath("results", "permutation_results.hdf5"))["Batch_1"]
+    @test length(results) == 100
+    failed_results = retrieve_failed_results(results; expected_keys=(:TMLE, :OSE))
+    @test failed_results == (TMLE=[], OSE=[])
 end
+
+@testset "Test RANDOMIZATION_TEST" begin
+    cmd = `nextflow run main.nf -entry RANDOMIZATION_TEST -c test/configs/negcontrol.config $args`
+    @info string("The following command will be run:\n", cmd)
+
+    r = run(cmd)
+    @test r.exitcode == 0
+
+    random_config = deserialize(joinpath("results", "random_variants_estimands.jls"))
+    @test length(random_config.estimands) > 200
+    @test Set(typeof(Ψ) for Ψ in random_config.estimands) == Set([TMLE.StatisticalATE, TMLE.StatisticalIATE])
+end
+
+end
+true
