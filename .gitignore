@@ -17,3 +17,4 @@ trace.txt
 test/chr_exc.sh
 test/output/*
 dag*
+test/dummy/*
