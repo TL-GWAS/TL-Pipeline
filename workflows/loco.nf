@@ -25,6 +25,36 @@ workflow LOCOGWAS{
             ExtractTraits.out,
             qc_file,
             ld_blocks)
+
+        LOCOConfounders(LOCOGenotypes.out)
+
+        EstimationInputs(
+            bgen_files,
+            ExtractTraits.out,
+            LOCOConfounders.out,
+            estimands_file,
+            bqtls_file,
+            transactors_files,
+            extra_confounders,
+            extra_treatments,
+            extra_covariates,
+        )
+
+        // generate estimates
+        EstimationWorkflow(
+            EstimationInputs.out.aggregated_dataset,
+            EstimationInputs.out.estimands.flatten(),
+            estimator_config,
+        )
+
+        // Generate sieve estimates
+        if (params.SVP == true){
+            sieve_results = SVPWorkflow(
+                EstimationWorkflow.out.hdf5_result, 
+                IIDGenotypes.out,
+            )
+        }
+
     } else {
         LOCOGenotypes(
             loco_bed_files, 
@@ -33,6 +63,7 @@ workflow LOCOGWAS{
             ld_blocks)
     }
     
-    LOCOConfounders(LOCOGenotypes.out)
+    
+
     
 }

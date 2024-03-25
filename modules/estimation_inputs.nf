@@ -1,5 +1,40 @@
 include { longest_prefix } from './utils.nf'
 
+process TMLEInputsFromLOCOGWAS {
+    container "olivierlabayle/tl-core:0.7"
+    publishDir "$params.OUTDIR/estimands", mode: 'symlink', pattern: "*.jls"
+    publishDir "$params.OUTDIR", mode: 'symlink', pattern: "*.arrow", saveAs: { filename -> "${params.ARROW_OUTPUT}" }
+    label "bigmem"
+
+    input:
+        path bedfile
+        path traits
+        path genetic_confounders
+        path parameter
+        val command
+
+    output:
+        path "final.data.arrow", emit: dataset
+        path "final.*.jls", emit: estimands
+
+    script:
+        bgen_prefix = longest_prefix(bgenfiles)
+        batch_size = params.BATCH_SIZE == 0 ? "" :  "--batch-size ${params.BATCH_SIZE}"
+        """
+        TEMPD=\$(mktemp -d)
+        JULIA_DEPOT_PATH=\$TEMPD:/opt julia --project=/TargeneCore.jl --startup-file=no --sysimage=/TargeneCore.jl/TargeneCoreSysimage.so /TargeneCore.jl/bin/generate_tl_inputs.jl \
+        --positivity-constraint ${params.POSITIVITY_CONSTRAINT} \
+        $batch_size \
+        --out-prefix=final \
+        --verbosity=${params.VERBOSITY} \
+        $command $parameter\
+        --traits $traits \
+        --bed-prefix $bed_prefix \
+        --call-threshold ${params.CALL_THRESHOLD} \
+        --pcs $genetic_confounders \
+        """
+}
+
 process TMLEInputsFromParamFile {
     container "olivierlabayle/tl-core:0.7"
     publishDir "$params.OUTDIR/estimands", mode: 'symlink', pattern: "*.jls"

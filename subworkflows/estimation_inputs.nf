@@ -44,8 +44,8 @@ workflow EstimationInputs {
                 )
         }
         else if (params.STUDY_DESIGN == "LOCO_GWAS"){
-            tmle_inputs = TMLEInputsFromParamFile(
-                // bed_files,
+            tmle_inputs = TMLEInputsFromLOCOGWAS(
+                bed_files,
                 traits,
                 genetic_confounders,
                 estimands_file,
