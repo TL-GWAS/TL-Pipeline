@@ -2,7 +2,7 @@ include { longest_prefix } from './utils.nf'
 
 process filterBED{
     label 'bigmem'
-    container "olivierlabayle/tl-core:0.7"
+    container "olivierlabayle/tl-core:0.8"
     publishDir "$params.OUTDIR/qc_filtered_chromosomes", mode: 'symlink'
 
     input:
@@ -50,7 +50,7 @@ process thinByLD{
 
 process mergeBEDS{
     label 'bigmem'
-    container "olivierlabayle/tl-core:0.7"
+    container "olivierlabayle/tl-core:0.8"
     publishDir "$params.OUTDIR/merged_genotypes", mode: 'symlink'
     
     input:
@@ -121,7 +121,7 @@ process FlashPCA {
 }
 
 process AdaptFlashPCA {
-    container "olivierlabayle/tl-core:0.6"
+    container "olivierlabayle/tl-core:0.8"
     publishDir "$params.OUTDIR/covariates/exc_${chr}", mode: 'symlink'
     label 'bigmem'
     
@@ -129,11 +129,11 @@ process AdaptFlashPCA {
         tuple path(flashpca_out), val(chr)
     
     output:
-        path "pcs.csv"
+        path "pcs_exc_${chr}.csv"
     
     script:
         """
         TEMPD=\$(mktemp -d)
-        JULIA_DEPOT_PATH=\$TEMPD:/opt julia --project=/TargeneCore.jl --startup-file=no /TargeneCore.jl/bin/prepare_confounders.jl --input $flashpca_out --output pcs.csv adapt
+        JULIA_DEPOT_PATH=\$TEMPD:/opt julia --project=/TargeneCore.jl --startup-file=no /TargeneCore.jl/bin/prepare_confounders.jl --input $flashpca_out --output pcs_exc_${chr}.csv adapt
         """
 }

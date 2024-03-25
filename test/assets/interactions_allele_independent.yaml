@@ -1,6 +1,9 @@
-orders: [2]
+type: groups
+
 estimands:
-  - IATE
+  - type: IATE
+    orders: [2]
+
 variants:
   TF1:
     bQTLs:

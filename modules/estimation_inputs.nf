@@ -36,7 +36,7 @@ process TMLEInputsFromLOCOGWAS {
 }
 
 process TMLEInputsFromParamFile {
-    container "olivierlabayle/tl-core:0.7"
+    container "olivierlabayle/tl-core:0.8"
     publishDir "$params.OUTDIR/estimands", mode: 'symlink', pattern: "*.jls"
     publishDir "$params.OUTDIR", mode: 'symlink', pattern: "*.arrow", saveAs: { filename -> "${params.ARROW_OUTPUT}" }
     label "bigmem"
@@ -71,7 +71,7 @@ process TMLEInputsFromParamFile {
 }
 
 process TMLEInputsFromActors {
-    container "olivierlabayle/tl-core:0.7"
+    container "olivierlabayle/tl-core:0.8"
     publishDir "$params.OUTDIR/estimands", mode: 'symlink', pattern: "*.jls"
     publishDir "$params.OUTDIR", mode: 'symlink', pattern: "*.arrow", saveAs: { filename -> "${params.ARROW_OUTPUT}" }
     label "bigmem"

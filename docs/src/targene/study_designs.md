@@ -11,11 +11,15 @@ While specifying your estimands, it may be useful to keep the following causal m
 
 Where ``V_1...V_p`` are a set of genetic variants, the ``Y_1...Y_K`` are a set of traits and ``C`` are a set of additional predictors for ``Y`` but not confounding the genetic effects.
 
-The following sections describe the available study designs available in TarGene.
+The following sections describe the available study designs available in TarGene and assumes the following notations:
+
+- ATE: Average Treatment Effect
+- IATE: Interaction Average Treatment Effect
+- CM: Conditional Mean
 
 ## `CUSTOM`
 
-This is the most general setting and should match the needs of any project, however it requires some preliminary work. In this setting, one typically provides a file containing a list of the estimands of interest. If you are interested in only a few estimands, it may be acceptable to write them by hand. Otherwise it is best to generate them using a programming language (for instance using [TMLE.jl](https://targene.github.io/TMLE.jl/stable/)). The path to those estimands is then provided with the `ESTIMANDS_FILE` nextflow parameter. Estimands are specified via a YAML file as follows:
+This is the most general setting and should match the needs of any project, however it requires some preliminary work. In this setting, one typically provides a file containing a list of the estimands of interest. If you are interested in only a few estimands, it may be acceptable to write them by hand. Otherwise it is best to generate them using a programming language (for instance using [TMLE.jl](https://targene.github.io/TMLE.jl/stable/)). The path to those estimands is then provided with the `ESTIMANDS_FILE` Nextflow parameter. Estimands are specified via a YAML file as follows:
 
 ```yaml
 type: "Configuration"
@@ -71,10 +75,7 @@ estimands:
 
 For each estimand:
 
-- `type`: refers to the type of effect size:
-  - ATE: Average Treatment Effect
-  - IATE: Interaction Average Treatment Effect
-  - CM: Conditional Mean
+- `type`: refers to the type of effect size (ATE, IATE, CM)
 - `outcome`: The trait of interest. If using the Uk-Biobank datasource it must match the `phenotypes/name` field in the associated `UKB_CONFIG` file. You can also use the wildcard "ALL" to specify that you want to estimate this parameter accross all traits in the dataset.
 - `treatment_values`: For each treatment variable (genetic-variant / environmental variables), the control/case contrasts.
 - `treatment_confounders`: If each treatment's set of confounding variables is assumed to be the same, it can be a list of these variables. Otherwise, for each treatment variable, a list of confounding variables. Note that principal components will be added to that list automatically and must not be provided here. You can provide an empty list.
@@ -84,12 +85,67 @@ Note that variants must be encoded via an explicit genotype string representatio
 
 ## `ALLELE_INDEPENDENT`
 
-This mode will generate all estimands corresponding to the provided `ESTIMANDS_FILE`. In this case, this file is a plain YAML file as follows:
+This mode aims to make it easy to generate estimands without explicitly having to write them down. We still rely on a YAML `ESTIMANDS_FILE`, that contains the following fields:
+
+- `type`: How the variants will be combined to generate estimands (see below).
+- `estimands`: A list of the followings:
+  - `type`: The type of generated estimands (`CM`, `ATE`, `IATE`)
+  - `orders`: With respect to treatment variables if more than two are provided, the combination orders to be generated. For interactions, the order is always greater or equal than 2.
+- `variants`: The list of genetic variants of interest, see below for how this can be specified.
+- `extra_treatments`: Environmental treatment variables that are added to the treatments combinations.
+- `outcome_extra_covariates`: Additional covariates predictive of the outcomes
+- `extra_confounders`: Confounding variables other than Principal Components.
+
+In TarGene, the effect of a variant (or set of variants) on a trait is not defined in terms of a parametric model. As such, the effect size of a variant on a trait is in fact multidimensional, a vector for which each entry corresponds to a specific **genotype change**. As an example, if a variant RSID_17 has two alleles "A" and "G", some possible genotype changes are: AA → AG, AG → GG, AA → GG, GG → AA, ... However, some effects of these changes are redundant, e.g. the effect of AA → GG can be obtained from the effects of AA → AG and AG → GG via simple addition. TarGene will only compute transitive changes, in this case only: AA → AG and AG → GG need to be estimated since any other change can be obtained from them.
+
+### type = flat
+
+In this mode, genetic variants are provided as a flat list, for each estimand type and order specified in the `estimands` section, the estimands are generated using combinations.
+
+For example, with the following file:
 
 ```yaml
-orders: [2, 3]
+type: flat
+
 estimands:
-  - IATE
+  - type: IATE
+    orders: [2, 3]
+  - type: ATE
+
+variants:
+  - RSID_17
+  - RSID_99
+  - RSID_102
+
+extra_treatments:
+  - TREAT_1
+
+outcome_extra_covariates:
+  - COV_1
+
+extra_confounders:
+  - 21003
+  - 22001
+```
+
+- Average Treatment Effects of `order` 1 (default) for all (RSID_17, RSID_99, RSID_102, TREAT_1) are generated
+- Interaction Effects of `order` 2 and 3 for all combinations of (RSID_17, RSID_99, RSID_102, TREAT_1) are generated. Some of these combinations are:
+  - (RSID_17, RSID_99)
+  - (RSID_102, TREAT_1)
+  - (RSID_102, RSID_99, TREAT_1)
+  - ...
+
+### type = groups
+
+When the number of variants becomes large, estimating all combinations becomes both computationally expensive and reduces power due to the associated multiple testing burden. If the genetic variants are not chosen at random but based on some biological mechanism (e.g. a transcription factor), it is more efficient to group them. Within each group further subgroups can be defined for the roles played by each variant, only combinations across groups are considered.
+
+For example, the following file describes two groups each consisting of two subgroups:
+
+```yaml
+type: groups
+estimands:
+  - type: IATE
+    orders: [2, 3]
 variants:
   TF1:
     bQTLs:
@@ -112,14 +168,7 @@ extra_confounders:
   - 22001
 ```
 
-where:
-
-- `orders`: If more than 2 treatment variables are provided, interactions can be of order greater than 2.
-- `estimands`: The type of generated estimands (only interactions `IATE` for now)
-- `variants`: Two nested levels of variant groups. For each top level group, the Cartesian product of variants in each subgroup is produced.
-- `extra_treatments`: These are added to the treatments combinations.
-- `outcome_extra_covariates`: Additional covariates predictive of the outcomes
-- `extra_confounders`: Confounding variables other than Principal Components.
+For group `TF1`, only (RSID_17, RSID_102) and (RSID_99, RSID_102) are considered and similarly for group `TF2`.
 
 ## `FROM_ACTORS`
 
