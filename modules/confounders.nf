@@ -2,7 +2,7 @@ include { longest_prefix } from './utils.nf'
 
 process filterBED{
     label 'bigmem'
-    container "olivierlabayle/tl-core:0.8"
+    container "olivierlabayle/tl-core:loco-gwas"
     publishDir "$params.OUTDIR/qc_filtered_chromosomes", mode: 'symlink'
 
     input:
@@ -50,7 +50,7 @@ process thinByLD{
 
 process mergeBEDS{
     label 'bigmem'
-    container "olivierlabayle/tl-core:0.8"
+    container "olivierlabayle/tl-core:loco-gwas"
     publishDir "$params.OUTDIR/merged_genotypes", mode: 'symlink'
     
     input:
@@ -71,7 +71,7 @@ process mergeBEDS{
 
 process LocoMergeBEDS {
     label 'bigmem'
-    container "olivierlabayle/tl-core:0.6"
+    container "olivierlabayle/tl-core:loco-gwas"
 
     input:
         tuple val(chr), path(files)
@@ -121,7 +121,7 @@ process FlashPCA {
 }
 
 process AdaptFlashPCA {
-    container "olivierlabayle/tl-core:0.8"
+    container "olivierlabayle/tl-core:loco-gwas"
     publishDir "$params.OUTDIR/covariates/exc_${chr}", mode: 'symlink'
     label 'bigmem'
     

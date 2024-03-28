@@ -2,7 +2,7 @@
 include { longest_prefix } from '../modules/utils.nf'
 
 process GeneratePermutationTestsData {
-    container "olivierlabayle/tl-core:0.8"
+    container "olivierlabayle/tl-core:loco-gwas"
     publishDir "${params.OUTDIR}/permutation_tests", mode: 'symlink', pattern: '*.arrow'
     publishDir "${params.OUTDIR}/permutation_tests/estimands", mode: 'symlink', pattern: '*.jls'
     label "bigmem"
@@ -35,7 +35,7 @@ process GeneratePermutationTestsData {
 }
 
 process GenerateRandomVariantsTestsData {
-    container "olivierlabayle/tl-core:0.8"
+    container "olivierlabayle/tl-core:loco-gwas"
     publishDir "${params.OUTDIR}", mode: 'symlink'
     label "bigmem"
     

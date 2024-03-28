@@ -1,7 +1,7 @@
 include { longest_prefix } from './utils.nf'
 
 process GRMPart {
-    container "olivierlabayle/tl-core:0.8"
+    container "olivierlabayle/tl-core:loco-gwas"
     label "bigmem"
     label "multithreaded"
 
