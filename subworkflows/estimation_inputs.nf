@@ -1,4 +1,4 @@
-include { TMLEInputsFromActors; TMLEInputsFromParamFile } from '../modules/estimation_inputs.nf'
+include { TMLEInputsFromActors; TMLEInputsFromParamFile; TMLEInputsFromLOCOGWAS } from '../modules/estimation_inputs.nf'
 
 workflow EstimationInputs {
     take:
@@ -11,6 +11,8 @@ workflow EstimationInputs {
         extra_confounders
         extra_treatments
         extra_covariates
+        loco_files
+
 
     main:
         if (params.STUDY_DESIGN == "FROM_ACTORS") {
@@ -45,11 +47,10 @@ workflow EstimationInputs {
         }
         else if (params.STUDY_DESIGN == "LOCO_GWAS"){
             tmle_inputs = TMLEInputsFromLOCOGWAS(
-                bed_files,
                 traits,
-                genetic_confounders,
+                loco_files,
                 estimands_file,
-                "loco-gwas"
+                "loco-gwas",
             )
         }
         else { 

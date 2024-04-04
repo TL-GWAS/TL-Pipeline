@@ -1,6 +1,11 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl = 2
 
+// BGEN files
+params.BGEN_FILES = "${projectDir}/assests/NO_BGEN_FILE"
+params.BQTLS = "${projectDir}/assests/NO_BQTLS"
+params.TRANS_ACTORS = "${projectDir}/assests/NO_TRANS_ACTORS"
+
 // Misc Parameters
 params.VERBOSITY = 0
 params.RNG = 123

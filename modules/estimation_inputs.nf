@@ -1,15 +1,25 @@
 include { longest_prefix } from './utils.nf'
 
+def removeLastPartOfPath(String filePath) {
+    // Create a File object from the file path
+    def file = new File(filePath)
+    
+    // Get the parent directory of the file
+    def parentDirectory = file.parent
+    
+    // Return the parent directory
+    return parentDirectory
+}
+
 process TMLEInputsFromLOCOGWAS {
-    container "olivierlabayle/tl-core:0.7"
+    container "olivierlabayle/tl-core:loco-gwas"
     publishDir "$params.OUTDIR/estimands", mode: 'symlink', pattern: "*.jls"
     publishDir "$params.OUTDIR", mode: 'symlink', pattern: "*.arrow", saveAs: { filename -> "${params.ARROW_OUTPUT}" }
     label "bigmem"
 
     input:
-        path bedfile
         path traits
-        path genetic_confounders
+        tuple val(chr), path(genetic_confounders), path(bed_file), path(bim_file), path(fam_file)
         path parameter
         val command
 
@@ -18,8 +28,10 @@ process TMLEInputsFromLOCOGWAS {
         path "final.*.jls", emit: estimands
 
     script:
-        bgen_prefix = longest_prefix(bgenfiles)
+        // bgen_prefix = longest_prefix(bgenfiles)
         batch_size = params.BATCH_SIZE == 0 ? "" :  "--batch-size ${params.BATCH_SIZE}"
+        bed_prefix = removeLastPartOfPath(params.BED_FILES)+ "/" + chr
+        
         """
         TEMPD=\$(mktemp -d)
         JULIA_DEPOT_PATH=\$TEMPD:/opt julia --project=/TargeneCore.jl --startup-file=no --sysimage=/TargeneCore.jl/TargeneCoreSysimage.so /TargeneCore.jl/bin/generate_tl_inputs.jl \
@@ -29,14 +41,15 @@ process TMLEInputsFromLOCOGWAS {
         --verbosity=${params.VERBOSITY} \
         $command $parameter\
         --traits $traits \
-        --bed-prefix $bed_prefix \
-        --call-threshold ${params.CALL_THRESHOLD} \
+        --bed-file $bed_file \
+        --bim-file $bim_file \
+        --fam-file $fam_file \
         --pcs $genetic_confounders \
         """
 }
 
 process TMLEInputsFromParamFile {
-    container "olivierlabayle/tl-core:0.8"
+    container "olivierlabayle/tl-core:loco-gwas"
     publishDir "$params.OUTDIR/estimands", mode: 'symlink', pattern: "*.jls"
     publishDir "$params.OUTDIR", mode: 'symlink', pattern: "*.arrow", saveAs: { filename -> "${params.ARROW_OUTPUT}" }
     label "bigmem"
@@ -71,7 +84,7 @@ process TMLEInputsFromParamFile {
 }
 
 process TMLEInputsFromActors {
-    container "olivierlabayle/tl-core:0.8"
+    container "olivierlabayle/tl-core:loco-gwas"
     publishDir "$params.OUTDIR/estimands", mode: 'symlink', pattern: "*.jls"
     publishDir "$params.OUTDIR", mode: 'symlink', pattern: "*.arrow", saveAs: { filename -> "${params.ARROW_OUTPUT}" }
     label "bigmem"

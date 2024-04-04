@@ -1,0 +1,4 @@
+type: flat
+  
+estimands: 
+  - type: ATE

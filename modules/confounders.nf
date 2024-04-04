@@ -122,14 +122,14 @@ process FlashPCA {
 
 process AdaptFlashPCA {
     container "olivierlabayle/tl-core:loco-gwas"
-    publishDir "$params.OUTDIR/covariates/exc_${chr}", mode: 'symlink'
+    publishDir "$params.OUTDIR/pcs", mode: 'symlink'
     label 'bigmem'
     
     input:
         tuple path(flashpca_out), val(chr)
     
     output:
-        path "pcs_exc_${chr}.csv"
+        tuple val(chr), path("pcs_exc_${chr}.csv")
     
     script:
         """
