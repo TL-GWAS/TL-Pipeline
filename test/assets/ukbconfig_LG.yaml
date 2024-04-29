@@ -1,0 +1,15 @@
+traits:
+  - fields:
+      - "21001"
+    phenotypes:
+      - name: "Body mass index (BMI)"
+subset:
+  - fields:
+      - "21000"
+    phenotypes:
+      - name: "White"
+        codings:
+         - "1001"
+         - "1002"
+         - "1003"
+         - "1"

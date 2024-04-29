@@ -24,8 +24,9 @@ process TMLEInputsFromLOCOGWAS {
         val command
 
     output:
-        path "final.data.arrow", emit: dataset
-        path "final.*.jls", emit: estimands
+        tuple(path("${chr}_final.data.arrow"), path("${chr}_final.*.jls"))
+        // path "${chr}_final.data.arrow", emit: dataset
+        // path "${chr}_final.*.jls", emit: estimands
 
     script:
         // bgen_prefix = longest_prefix(bgenfiles)
@@ -37,7 +38,7 @@ process TMLEInputsFromLOCOGWAS {
         JULIA_DEPOT_PATH=\$TEMPD:/opt julia --project=/TargeneCore.jl --startup-file=no --sysimage=/TargeneCore.jl/TargeneCoreSysimage.so /TargeneCore.jl/bin/generate_tl_inputs.jl \
         --positivity-constraint ${params.POSITIVITY_CONSTRAINT} \
         $batch_size \
-        --out-prefix=final \
+        --out-prefix=${chr}_final \
         --verbosity=${params.VERBOSITY} \
         $command $parameter\
         --traits $traits \

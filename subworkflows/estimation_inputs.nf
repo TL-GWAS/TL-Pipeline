@@ -58,6 +58,7 @@ workflow EstimationInputs {
         }
     
     emit:
-        aggregated_dataset = tmle_inputs.dataset
-        estimands = tmle_inputs.estimands
+        tmle_inputs
+        // aggregated_dataset = tmle_inputs.dataset
+        // estimands = tmle_inputs.estimands
 }

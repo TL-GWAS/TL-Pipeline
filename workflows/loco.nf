@@ -3,6 +3,7 @@ nextflow.enable.dsl = 2
 include { ExtractTraits } from "../subworkflows/extract_traits.nf"
 include { LOCOGenotypes; LOCOConfounders } from "../subworkflows/confounders.nf"
 include { EstimationInputs } from "../subworkflows/estimation_inputs.nf"
+include { EstimationWorkflow } from "../subworkflows/estimation.nf"
 
 workflow LOCOGWAS{
     bed_files = Channel.fromPath("$params.BED_FILES", checkIfExists: true).collect()
@@ -23,6 +24,8 @@ workflow LOCOGWAS{
     qc_file = Channel.value(file("$params.QC_FILE", checkIfExists: true))
     ld_blocks = Channel.value(file("$params.LD_BLOCKS", checkIfExists: false))
 
+    estimator_config = Channel.value(file("$params.ESTIMATOR_FILE"))
+
     if (params.COHORT == "UKBB") {
         ExtractTraits(
             traits_dataset, 
@@ -40,7 +43,7 @@ workflow LOCOGWAS{
         
         // Merge bed files with confounder output on chr_id
         loco_files = LOCOConfounders.out.cross(loco_bed_files).map{[it[0][0], it[0][1], it[1][1][0], it[1][1][1], it[1][1][2]]}
-        
+
         EstimationInputs(
             bgen_files,
             ExtractTraits.out,
@@ -54,12 +57,14 @@ workflow LOCOGWAS{
             loco_files
         )
 
-        // // generate estimates
-        // EstimationWorkflow(
-        //     EstimationInputs.out.aggregated_dataset,
-        //     EstimationInputs.out.estimands.flatten(),
-        //     estimator_config,
-        // )
+        EstimationInputs.out.transpose().set{inputs}
+
+        //generate estimates
+        EstimationWorkflow(
+            inputs.map{it[0]}, // dataset
+            inputs.map{it[1]},  // estimands
+            estimator_config,
+        )
 
         // // Generate sieve estimates
         // if (params.SVP == true){
