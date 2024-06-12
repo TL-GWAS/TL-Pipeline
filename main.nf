@@ -71,7 +71,7 @@ include { PERMUTATION_TEST; RANDOMIZATION_TEST } from './workflows/negative_cont
 include { PCA } from './workflows/pca.nf'
 include { MAKE_DATASET } from './workflows/dataset.nf'
 // Loco functions/processes
-include { LocoMergeBEDS: RunPCALoco } from './modules/loco.nf'
+include { LOCOGWAS } from './workflows/loco.nf'
 
 log.info """\
          ${workflow.manifest.name} v${workflow.manifest.version}
@@ -88,5 +88,8 @@ log.info """\
          .stripIndent()
 
 workflow  {
-    TARGENE()
+    if (params.STUDY_DESIGN == "LOCO_GWAS")
+        LOCOGWAS()
+    else
+        TARGENE()
 }

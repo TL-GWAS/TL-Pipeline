@@ -3,13 +3,17 @@ traits:
       - "21001"
     phenotypes:
       - name: "Body mass index (BMI)"
-subset:
   - fields:
-      - "21000"
+      - "728"
     phenotypes:
-      - name: "White"
-        codings:
-         - "1001"
-         - "1002"
-         - "1003"
-         - "1"
+      - name: "Number of vehicles in household"
+# subset:
+#   - fields:
+#       - "21000"
+#     phenotypes:
+#       - name: "White"
+#         codings:
+#          - "1001"
+#          - "1002"
+#          - "1003"
+#          - "1"

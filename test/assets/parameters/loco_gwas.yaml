@@ -1,4 +1,5 @@
-type: flat
-  
-estimands: 
-  - type: ATE
+type: gwas
+
+outcome_extra_covariates:
+  - Number of vehicles in household
+

@@ -11,7 +11,7 @@ def removeLastPartOfPath(String filePath) {
     return parentDirectory
 }
 
-process TMLEInputsFromLOCOGWAS {
+process TMLEInputsGWAS {
     container "olivierlabayle/tl-core:loco-gwas"
     publishDir "$params.OUTDIR/estimands", mode: 'symlink', pattern: "*.jls"
     publishDir "$params.OUTDIR", mode: 'symlink', pattern: "*.arrow", saveAs: { filename -> "${params.ARROW_OUTPUT}" }
@@ -19,21 +19,19 @@ process TMLEInputsFromLOCOGWAS {
 
     input:
         path traits
-        tuple val(chr), path(genetic_confounders), path(bed_file), path(bim_file), path(fam_file)
+        tuple val(chr), path(genetic_confounders)
         path parameter
         val command
-
+        path root
     output:
         tuple(path("${chr}_final.data.arrow"), path("${chr}_final.*.jls"))
-        // path "${chr}_final.data.arrow", emit: dataset
-        // path "${chr}_final.*.jls", emit: estimands
 
     script:
-        // bgen_prefix = longest_prefix(bgenfiles)
         batch_size = params.BATCH_SIZE == 0 ? "" :  "--batch-size ${params.BATCH_SIZE}"
-        bed_prefix = removeLastPartOfPath(params.BED_FILES)+ "/" + chr
-        
-        """
+
+        """ 
+        dir=\$( echo "$params.BED_FILES" | rev | cut -f2 -d'/' - | rev)
+        bed_prefix=\$( echo "\$dir/$chr")
         TEMPD=\$(mktemp -d)
         JULIA_DEPOT_PATH=\$TEMPD:/opt julia --project=/TargeneCore.jl --startup-file=no --sysimage=/TargeneCore.jl/TargeneCoreSysimage.so /TargeneCore.jl/bin/generate_tl_inputs.jl \
         --positivity-constraint ${params.POSITIVITY_CONSTRAINT} \
@@ -42,9 +40,7 @@ process TMLEInputsFromLOCOGWAS {
         --verbosity=${params.VERBOSITY} \
         $command $parameter\
         --traits $traits \
-        --bed-file $bed_file \
-        --bim-file $bim_file \
-        --fam-file $fam_file \
+        --genotype-prefix \$bed_prefix \
         --pcs $genetic_confounders \
         """
 }

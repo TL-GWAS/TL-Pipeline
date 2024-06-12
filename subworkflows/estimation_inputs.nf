@@ -1,4 +1,4 @@
-include { TMLEInputsFromActors; TMLEInputsFromParamFile; TMLEInputsFromLOCOGWAS } from '../modules/estimation_inputs.nf'
+include { TMLEInputsFromActors; TMLEInputsFromParamFile; TMLEInputsGWAS } from '../modules/estimation_inputs.nf'
 
 workflow EstimationInputs {
     take:
@@ -12,6 +12,7 @@ workflow EstimationInputs {
         extra_treatments
         extra_covariates
         loco_files
+        root
 
 
     main:
@@ -46,11 +47,12 @@ workflow EstimationInputs {
                 )
         }
         else if (params.STUDY_DESIGN == "LOCO_GWAS"){
-            tmle_inputs = TMLEInputsFromLOCOGWAS(
+            tmle_inputs = TMLEInputsGWAS(
                 traits,
                 loco_files,
                 estimands_file,
-                "loco-gwas",
+                "allele-independent",
+                root
             )
         }
         else { 

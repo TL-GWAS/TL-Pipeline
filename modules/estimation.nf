@@ -1,5 +1,5 @@
 process MergeOutputs {
-    container "olivierlabayle/targeted-estimation:0.8"
+    container "olivierlabayle/targeted-estimation:agnostic_composed"
     publishDir "$params.OUTDIR", mode: 'symlink'
     label "bigmem"
     
@@ -22,7 +22,7 @@ process MergeOutputs {
 }
 
 process TMLE {
-    container "olivierlabayle/targeted-estimation:0.8"
+    container "olivierlabayle/targeted-estimation:agnostic_composed"
     publishDir "$params.OUTDIR/tmle_outputs/", mode: 'symlink', pattern: "*.hdf5"
     label "bigmem"
     label "multithreaded"

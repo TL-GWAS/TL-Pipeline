@@ -36,7 +36,7 @@ process AggregateGRM {
 }
 
 process SVP {
-    container "olivierlabayle/targeted-estimation:0.8"
+    container "olivierlabayle/targeted-estimation:agnostic_composed"
     publishDir "$params.OUTDIR", mode: 'symlink'
 
     input:
