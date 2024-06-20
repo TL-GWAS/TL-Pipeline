@@ -7,6 +7,10 @@ traits:
       - "728"
     phenotypes:
       - name: "Number of vehicles in household"
+  - fields:
+      - "1408"
+    phenotypes:
+      - name: "Cheese intake"
 # subset:
 #   - fields:
 #       - "21000"

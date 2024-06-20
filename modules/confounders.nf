@@ -70,7 +70,6 @@ process mergeBEDS{
 }
 
 process LocoMergeBEDS {
-    label 'bigmem'
     container "olivierlabayle/tl-core:loco-gwas"
 
     input:

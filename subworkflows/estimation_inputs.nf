@@ -12,8 +12,6 @@ workflow EstimationInputs {
         extra_treatments
         extra_covariates
         loco_files
-        root
-
 
     main:
         if (params.STUDY_DESIGN == "FROM_ACTORS") {
@@ -51,8 +49,7 @@ workflow EstimationInputs {
                 traits,
                 loco_files,
                 estimands_file,
-                "allele-independent",
-                root
+                "allele-independent"
             )
         }
         else { 

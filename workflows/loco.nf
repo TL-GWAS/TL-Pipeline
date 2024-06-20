@@ -46,7 +46,7 @@ workflow LOCOGWAS{
         LOCOConfounders(LOCOGenotypes.out)
         
         // Merge bed files with confounder output on chr_id
-        loco_files = LOCOConfounders.out.cross(loco_bed_files).map{[it[0][0], it[0][1]]}
+        loco_files = LOCOConfounders.out.cross(loco_bed_files).map{[it[0][0], it[0][1], it[1][1][0], it[1][1][1], it[1][1][2]]}
     
         EstimationInputs(
             bgen_files,
@@ -58,8 +58,7 @@ workflow LOCOGWAS{
             extra_confounders,
             extra_treatments,
             extra_covariates,
-            loco_files,
-            root
+            loco_files
         )
     
         EstimationInputs.out.transpose().set{inputs}
