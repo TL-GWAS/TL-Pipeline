@@ -30,7 +30,7 @@ process TMLEInputsGWAS {
 
         """ 
         TEMPD=\$(mktemp -d)
-        JULIA_DEPOT_PATH=\$TEMPD:/opt julia --project=/TargeneCore.jl --startup-file=no --sysimage=/TargeneCore.jl/TargeneCoreSysimage.so /TargeneCore.jl/bin/generate_tl_inputs.jl \
+        JULIA_DEPOT_PATH=\$TEMPD:/opt julia --threads=${task.cpus} --project=/TargeneCore.jl --startup-file=no --sysimage=/TargeneCore.jl/TargeneCoreSysimage.so /TargeneCore.jl/bin/generate_tl_inputs.jl \
         --positivity-constraint ${params.POSITIVITY_CONSTRAINT} \
         $batch_size \
         --out-prefix=${chr}_final \
