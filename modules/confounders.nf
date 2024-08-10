@@ -1,12 +1,12 @@
 include { longest_prefix } from './utils.nf'
 
-process filterBED{
+process FilterBED {
     label 'bigmem'
     label 'targenecore_image'
     publishDir "${params.OUTDIR}/qc_filtered_chromosomes", mode: 'symlink'
 
     input:
-        path bedfiles
+        tuple val(chr_id), file(bedfiles)
         path qcfile
         path ld_blocks
         path traits
@@ -29,7 +29,7 @@ process filterBED{
 }
 
 
-process thinByLD {
+process ThinByLD {
     label 'bigmem'
     label 'plink_image'
     publishDir "${params.OUTDIR}/ld_pruned_chromosomes", mode: 'symlink'
@@ -50,7 +50,7 @@ process thinByLD {
 }
 
 
-process mergeBEDS{
+process MergeBEDS{
     label 'bigmem'
     label 'targenecore_image'
     publishDir "${params.OUTDIR}/merged_genotypes", mode: 'symlink'
@@ -70,8 +70,9 @@ process mergeBEDS{
 
 }
 
-process LocoMergeBEDS {
-    container "olivierlabayle/tl-core:loco-gwas"
+process MergeBEDSLOCO {
+    label 'bigmem'
+    label 'targenecore_image'
 
     input:
         tuple val(chr), path(files)
@@ -80,20 +81,33 @@ process LocoMergeBEDS {
 
     script:
         prefix = longest_prefix(files)
-        //len = get_length(files)
-
         """
         #!/bin/bash
     
         TEMPD=\$(mktemp -d)
-        JULIA_DEPOT_PATH=\$TEMPD:/opt julia --project=/TargeneCore.jl --startup-file=no /TargeneCore.jl/bin/prepare_confounders.jl --input ${prefix} --output ${chr}_excluded merge
-        
+        JULIA_DEPOT_PATH=\$TEMPD:/opt julia --project=/TargeneCore.jl --startup-file=no /TargeneCore.jl/targenecore.jl \
+        merge-beds ${prefix} ${chr}_excluded
         """
 }
 
 process SampleQCFilter {
     label 'bigmem'
     label 'plink_image'
+    publishDir "${params.OUTDIR}/iid_genotypes", mode: 'symlink'
+
+    input:
+        path merged_bed_files
+    
+    output:
+        path "qc_filtered*"
+
+    script:
+        "plink2 --bfile ukbb_merged --make-bed --hwe 1e-10 --geno --mind --out qc_filtered"
+}
+
+process SampleQCFilterLOCO {
+    label 'bigmem'
+    container "olivierlabayle/plink2:0.1.0"
     publishDir "${params.OUTDIR}/iid_genotypes", mode: 'symlink'
 
     input:
@@ -106,9 +120,25 @@ process SampleQCFilter {
         "plink2 --bfile ${chr}_excluded --make-bed --hwe 1e-10 --geno --mind --out qc_exc_${chr}"
 }
 
+
 process FlashPCA {
     label "multithreaded"
     label 'pca_image'
+
+    input:
+        path bedfiles
+    
+    output:
+        path "pcs.txt"
+    
+    script:
+        prefix = bedfiles[0].toString().minus('.bed')
+        "/home/flashpca-user/flashpca/flashpca --bfile ${prefix} --ndim ${params.NB_PCS} --numthreads ${task.cpus}"
+}
+
+process FlashPCALOCO {
+    label "multithreaded"
+    container 'pca_image'
 
     input:
         tuple path(bedfiles), val(chr)    
@@ -117,7 +147,7 @@ process FlashPCA {
     
     script:
         prefix = bedfiles[0].toString().minus('.bed')
-        "/home/flashpca-user/flashpca/flashpca --bfile ${prefix} --ndim ${params.NB_PCS} --numthreads ${task.cpus}"
+        "/home/flashpca-user/flashpca/flashpca --bfile $prefix --ndim ${params.NB_PCS} --numthreads $task.cpus"
 }
 
 process AdaptFlashPCA {
@@ -125,6 +155,25 @@ process AdaptFlashPCA {
     label 'bigmem'
     label 'targenecore_image'
 
+    input:
+        path flashpca_out
+    
+    output:
+        path "pcs.csv"
+    
+    script:
+        """
+        TEMPD=\$(mktemp -d)
+        JULIA_DEPOT_PATH=\$TEMPD:/opt julia --project=/TargeneCore.jl --startup-file=no /TargeneCore.jl/targenecore.jl \
+        adapt-flashpca ${flashpca_out} pcs.csv
+        """
+}
+
+process AdaptFlashPCALOCO {
+    publishDir "$params.OUTDIR/covariates/", mode: 'symlink'
+    label 'bigmem'
+    label 'targenecore_image'
+    
     input:
         tuple path(flashpca_out), val(chr)
     
