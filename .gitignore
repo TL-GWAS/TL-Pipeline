@@ -18,3 +18,4 @@ test/chr_exc.sh
 test/output/*
 dag*
 test/output
+trace*

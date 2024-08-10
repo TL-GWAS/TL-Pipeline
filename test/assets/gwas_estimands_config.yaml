@@ -1,0 +1,5 @@
+type: gwas
+
+outcome_extra_covariates:
+  - "Number of vehicles in household"
+  - "Cheese intake"

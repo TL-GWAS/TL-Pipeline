@@ -1,4 +1,4 @@
-include { filterBED; thinByLD; mergeBEDS; LocoMergeBEDS; SampleQCFilter; FlashPCA; AdaptFlashPCA } from '../modules/confounders.nf'
+include { FilterBED; ThinByLD; MergeBEDS; MergeBEDSLOCO; SampleQCFilter; SampleQCFilterLOCO; FlashPCA; FlashPCALOCO; AdaptFlashPCA; AdaptFlashPCALOCO } from '../modules/confounders.nf'
 
 workflow LOCOGenotypes {
     take:
@@ -8,7 +8,7 @@ workflow LOCOGenotypes {
         ld_blocks
     main:
         filter_prep = loco_bed_files.map {it[1]}
-        filtered = filterBED(filter_prep, qc_file, ld_blocks, traits)
+        filtered = FilterBED(filter_prep, qc_file, ld_blocks, traits)
         filtered = filtered.collect().toList()
 
         loco_bed_files
@@ -26,13 +26,13 @@ workflow LOCOConfounders{
     take:
         bed_files
     main:
-        merged_bed_ch = LocoMergeBEDS(bed_files)
-        qc_filtered = SampleQCFilter(merged_bed_ch)
-        pcs_txt = FlashPCA(qc_filtered)
-        pcs_csv = AdaptFlashPCA(pcs_txt)
+        merged_bed_ch = MergeBEDSLOCO(bed_files)
+        qc_filtered = SampleQCFilterLOCO(merged_bed_ch)
+        pcs_txt = FlashPCALOCO(qc_filtered)
+        pcs_csv = AdaptFlashPCALOCO(pcs_txt)
 
     emit:
-        pcs_csv
+        pcs_csv // this is a tuple [0] = chr, [1] = pcs
         
 }
 
@@ -45,9 +45,9 @@ workflow IIDGenotypes{
         traits
 
     main:
-        filtered_bedfiles = filterBED(bed_files, qc_file, ld_blocks, traits)
-        ld_pruned = thinByLD(flashpca_excl_reg, filtered_bedfiles)
-        mergeBEDS(ld_pruned.collect())
+        filtered_bedfiles = FilterBED(bed_files, qc_file, ld_blocks, traits)
+        ld_pruned = ThinByLD(flashpca_excl_reg, filtered_bedfiles)
+        MergeBEDS(ld_pruned.collect())
         SampleQCFilter(mergeBEDS.out.collect())
 
     emit:

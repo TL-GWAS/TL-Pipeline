@@ -6,7 +6,7 @@ process FilterBED {
     publishDir "${params.OUTDIR}/qc_filtered_chromosomes", mode: 'symlink'
 
     input:
-        tuple val(chr_id), file(bedfiles)
+        path(bedfiles)
         path qcfile
         path ld_blocks
         path traits
@@ -28,7 +28,6 @@ process FilterBED {
         """
 }
 
-
 process ThinByLD {
     label 'bigmem'
     label 'plink_image'
@@ -48,7 +47,6 @@ process ThinByLD {
         plink2 --memory ${task.memory.toMega()} --bfile ${prefix} --extract plink2.prune.in --make-bed --out LDpruned.${prefix}
         """
 }
-
 
 process MergeBEDS{
     label 'bigmem'
@@ -138,7 +136,7 @@ process FlashPCA {
 
 process FlashPCALOCO {
     label "multithreaded"
-    container 'pca_image'
+    label 'pca_image'
 
     input:
         tuple path(bedfiles), val(chr)    

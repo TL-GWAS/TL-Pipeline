@@ -26,7 +26,7 @@ params.LD_BLOCKS = "${projectDir}/assets/NO_LD_BLOCKS"
 params.FLASHPCA_EXCLUSION_REGIONS = "${projectDir}/assets/exclusion_regions_hg19.txt"
 
 // Estimands Generation 
-params.BATCH_SIZE = 400
+params.BATCH_SIZE = 200
 
 // CUSTOM
 params.STUDY_DESIGN = "CUSTOM"
@@ -86,7 +86,7 @@ log.info """\
          .stripIndent()
 
 workflow  {
-    if (params.STUDY_DESIGN == "LOCO_GWAS")
+    if (params.STUDY_DESIGN == "GWAS")
         LOCOGWAS()
     else
         TARGENE()

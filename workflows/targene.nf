@@ -16,7 +16,7 @@ workflow TARGENE {
     EstimationInputs(
         bgen_files,
         PCA.out.traits,
-        PCA.out.pcs,
+        PCA.out.confounders,
         estimands_file
     )
 
