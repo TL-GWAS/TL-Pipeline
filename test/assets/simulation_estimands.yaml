@@ -1,0 +1,41 @@
+type: "Configuration"
+estimands:
+  - type: "JointEstimand"
+    args:
+      - outcome_extra_covariates:
+          - Skin colour
+        type: "ATE"
+        treatment_values:
+          3:3502414:T:C:
+            case: "TC"
+            control: "TT"
+        outcome: ALL
+        treatment_confounders:
+          3:3502414:T:C:
+            - Number of vehicles in household
+      - outcome_extra_covariates:
+          - Skin colour
+        type: "ATE"
+        treatment_values:
+          3:3502414:T:C:
+            case: "CC"
+            control: "TC"
+        outcome: ALL
+        treatment_confounders:
+          3:3502414:T:C:
+            - Number of vehicles in household
+  - outcome_extra_covariates: 
+      - Skin colour
+    type: "IATE"
+    treatment_values:
+      3:3502414:T:C:
+        case: "TT"
+        control: "CT"
+      1:238411180:T:C:
+        case: "TC"
+        control: "TT"
+    outcome: other fractures
+    treatment_confounders:
+      3:3502414:T:C:
+        - Number of vehicles in household
+      1:238411180:T:C: []

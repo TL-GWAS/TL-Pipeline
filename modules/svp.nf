@@ -1,9 +1,9 @@
 include { longest_prefix } from './utils.nf'
 
 process GRMPart {
-    container "olivierlabayle/tl-core:loco-gwas"
     label "bigmem"
     label "multithreaded"
+    label 'targenecore_image'
 
     input:
         path bedfiles
@@ -15,11 +15,11 @@ process GRMPart {
     
     script:
         base = bedfiles.first().getName().split("\\.")[0]
-        "gcta64 --bfile $base --make-grm-part $nparts $part_id --thread-num ${task.cpus} --out GRM"
+        "gcta64 --bfile ${base} --make-grm-part ${nparts} ${part_id} --thread-num ${task.cpus} --out GRM"
 }
 
 process AggregateGRM {
-    publishDir "$params.OUTDIR/GRM", mode: 'symlink'
+    publishDir "${params.OUTDIR}/GRM", mode: 'symlink'
 
     input:
         path grm_files
@@ -36,8 +36,8 @@ process AggregateGRM {
 }
 
 process SVP {
-    container "olivierlabayle/targeted-estimation:agnostic_composed"
-    publishDir "$params.OUTDIR", mode: 'symlink'
+    label 'tmle_image'
+    publishDir "${params.OUTDIR}", mode: 'symlink'
 
     input:
         path hdf5_results
@@ -52,7 +52,7 @@ process SVP {
         """
         TEMPD=\$(mktemp -d)
         JULIA_DEPOT_PATH=\$TEMPD:/opt julia --sysimage=/TargetedEstimation.jl/TMLESysimage.so --project=/TargetedEstimation.jl --startup-file=no /TargetedEstimation.jl/tmle.jl svp \
-        $hdf5_prefix \
+        ${hdf5_prefix} \
         --n-estimators=${params.NB_SVP_ESTIMATORS} \
         --max-tau=${params.MAX_SVP_THRESHOLD} \
         --estimator-key=${params.ESTIMATOR_KEY} \

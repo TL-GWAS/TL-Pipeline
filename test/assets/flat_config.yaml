@@ -1,0 +1,20 @@
+type: flat
+
+estimands:
+  - type: IATE
+    orders: [2, 3]
+  - type: ATE
+
+variants:
+  - 1:238411180:T:C
+  - 3:3502414:T:C
+  - 2:14983:G:A
+
+extra_treatments:
+  - "Cheese intake"
+
+outcome_extra_covariates:
+  - "Skin colour"
+
+extra_confounders:
+  - "Number of vehicles in household"

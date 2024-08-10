@@ -28,6 +28,10 @@ makedocs(;
                 joinpath("targene", "configuration.md"),
                 joinpath("targene", "runtime_considerations.md")
             ],
+            "The Simulation Workflows" => [
+                joinpath("simulations", "overview.md"),
+                joinpath("simulations", "null_simulation.md"),
+            ],
             "Negative Control" => [
                 joinpath("negative_control", "overview.md"),
                 joinpath("negative_control", "permutation_tests.md"),
@@ -37,8 +41,8 @@ makedocs(;
             joinpath("secondary_workflows", "make_dataset.md")
             ],
         "Developper Guide" => [
-            joinpath("developper_guide", "project_organization.md"),
-            joinpath("developper_guide", "contribution_guide.md")
+            joinpath("developer_guide", "project_organization.md"),
+            joinpath("developer_guide", "contribution_guide.md")
             ],
         "Associated Softwares" => "associated_softwares.md",
         "Related Publications" => "publications.md"

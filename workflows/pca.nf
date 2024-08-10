@@ -32,4 +32,10 @@ workflow PCA {
 
     // Genetic confounders
     GeneticConfounders(IIDGenotypes.out)
+    
+    emit:
+        traits = ExtractTraits.out
+        iid_genotypes = IIDGenotypes.out
+        pcs = GeneticConfounders.out
+
 }

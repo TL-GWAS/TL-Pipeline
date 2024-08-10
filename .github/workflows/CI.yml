@@ -15,11 +15,12 @@ jobs:
       fail-fast: false
       matrix:
         testrun:
-          - "ukb_from_actors.jl"
-          - "ukb_custom.jl"
-          - "ukb_allele_independent.jl"
-          - "custom_from_actors.jl"
+          - "ukb_estimands_file.jl"
+          - "custom_cohort_flat_config.jl"
+          - "ukb_interactions_group_config.jl"
           - "make_dataset.jl"
+          - "null_simulation.jl"
+          - "realistic_simulation.jl"
     steps:
       - uses: actions/checkout@v2
       - uses: julia-actions/setup-julia@v1

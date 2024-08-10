@@ -9,8 +9,10 @@ using Serialization
 # "local" profile assumes singularity is installed
 args = length(ARGS) > 0 ? ARGS : ["-profile", "local", "-resume"] 
 
-@testset "Test ukb_allele_independent.config" begin
-    cmd = `nextflow run main.nf -c test/configs/ukb_allele_independent.config $args`
+include("utils.jl")
+
+@testset "Test ukb_interactions_group.config" begin
+    cmd = `nextflow run main.nf -c test/configs/ukb_interactions_group.config $args`
     @info string("The following command will be run:\n", cmd)
 
     r = run(cmd)
@@ -18,13 +20,13 @@ args = length(ARGS) > 0 ? ARGS : ["-profile", "local", "-resume"]
 
     ## Checking main output
     # Results
-    results_from_hdf5 = jldopen(joinpath("results", "results.hdf5"))["Batch_1"]
+    results_from_hdf5 = jldopen(io -> io["results"], joinpath("results", "results.hdf5"))
     nresults = length(results_from_hdf5)
-    @test nresults > 50
+    @test nresults > 20
     nfails = 0
     treatment_combinations = Set([])
     for result in results_from_hdf5
-        Ψ̂ = result.TMLE
+        Ψ̂ = result.TMLE_GLM_GLM
         if Ψ̂ isa TargetedEstimation.FailedEstimate
             nfails += 1
         else
@@ -37,8 +39,17 @@ args = length(ARGS) > 0 ? ARGS : ["-profile", "local", "-resume"]
         (Symbol("2:14983:G:A"), Symbol("3:3502414:T:C")),
         (Symbol("1:238411180:T:C"), Symbol("2:14983:G:A"))
     ])
+
+    # Dataset
+    dataset = TargetedEstimation.instantiate_dataset("results/dataset.arrow")
+    @test Set(names(dataset)) == Set(vcat("SAMPLE_ID", TRAITS, PCS, ["2:14983:G:A", "3:3502414:T:C", "1:238411180:T:C"]))
+
     # QQ plot
     @test isfile("results/QQ.png")
+
+     # Check properly resumed
+    resume_time = @elapsed run(cmd)
+    @test resume_time < 1000
 end
 
 end

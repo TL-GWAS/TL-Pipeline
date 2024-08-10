@@ -1,5 +1,5 @@
 process UKBFieldsList {
-    container "olivierlabayle/ukbmain:0.4"
+    label 'ukb_image'
 
     input:
         path ukb_config
@@ -16,7 +16,7 @@ process UKBFieldsList {
 }
 
 process UKBConv {
-    container "olivierlabayle/ukbmain:0.4"
+    label 'ukb_image'
 
     input:
         path fields_list
@@ -32,7 +32,7 @@ process UKBConv {
 
 process TraitsFromUKB {
     publishDir "$params.OUTDIR/traits", mode: 'symlink'
-    container "olivierlabayle/ukbmain:0.4"
+    label 'ukb_image'
     label "bigmem"
     label "multithreaded"
 

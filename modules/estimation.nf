@@ -1,8 +1,8 @@
 process MergeOutputs {
-    container "olivierlabayle/targeted-estimation:agnostic_composed"
     publishDir "$params.OUTDIR", mode: 'symlink'
     label "bigmem"
-    
+    label 'tmle_image'
+
     input:
         path tmle_files
 
@@ -22,10 +22,8 @@ process MergeOutputs {
 }
 
 process TMLE {
-    container "olivierlabayle/targeted-estimation:agnostic_composed"
     publishDir "$params.OUTDIR/tmle_outputs/", mode: 'symlink', pattern: "*.hdf5"
-    label "bigmem"
-    label "multithreaded"
+    label 'tmle_image'
 
     input:
         path data
@@ -38,17 +36,18 @@ process TMLE {
     script:
         basename = "tmle_result." + estimands_file.getName().take(estimands_file.getName().lastIndexOf('.'))
         hdf5out = basename + ".hdf5"
-        pval_option = params.KEEP_IC == true ? ",${params.PVAL_THRESHOLD}" : ""
-        sample_ids = params.SVP == true ? ",true" : ""
-        output_option = "--hdf5-output=${hdf5out}${pval_option}${sample_ids}"
+        pvalue_threhsold = params.KEEP_IC == true ? "--pvalue-threshold=${params.PVAL_THRESHOLD}" : ""
+        save_sample_ids = params.SVP == true ? "--save-sample-ids" : ""
         """
         TEMPD=\$(mktemp -d)
         JULIA_DEPOT_PATH=\$TEMPD:/opt julia --sysimage=/TargetedEstimation.jl/TMLESysimage.so --project=/TargetedEstimation.jl --threads=${task.cpus} --startup-file=no /TargetedEstimation.jl/tmle.jl tmle \
-        $data \
-        --estimands=$estimands_file \
-        --estimators=$estimator_file \
-        $output_option \
-        --chunksize=${params.TL_SAVE_EVERY} \
+        ${data} \
+        --estimands=${estimands_file} \
+        --estimators=${estimator_file} \
+        --hdf5-output=${hdf5out} \
+        ${pvalue_threhsold} \
+        ${save_sample_ids} \
+        --chunksize=${params.TL_SAVE_EVERY}
         """
 }
 
