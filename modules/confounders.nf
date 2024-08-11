@@ -16,8 +16,8 @@ process FilterBED {
 
     script:
         input_prefix = bedfiles[0].toString().minus('.bed')
-        qc_file = qcfile.getName() != 'NO_QC_FILE' ? "--qc-file ${qcfile}" : '' 
-        ld_blocks = ld_blocks.getName() != 'NO_LD_BLOCKS' ? "--ld-blocks-file ${ld_blocks}" : ''
+        qc_file = qcfile instanceof File && qcfile.getName() != 'NO_QC_FILE' ? "--qc-file ${qcfile}" : ''
+        ld_blocks = ld_blocks instanceof File && ld_blocks.getName() != 'NO_LD_BLOCKS' ? "--ld-blocks-file ${ld_blocks}" : ''
         """
         TEMPD=\$(mktemp -d)
         JULIA_DEPOT_PATH=\$TEMPD:/opt julia --project=/TargeneCore.jl --startup-file=no /TargeneCore.jl/targenecore.jl \

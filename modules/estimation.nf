@@ -24,7 +24,8 @@ process MergeOutputs {
 process TMLE {
     publishDir "$params.OUTDIR/tmle_outputs/", mode: 'symlink', pattern: "*.hdf5"
     label 'tmle_image'
-
+    label "tmlemem"
+    
     input:
         path data
         path estimands_file
